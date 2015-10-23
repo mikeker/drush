@@ -223,6 +223,9 @@ function drush_sitealias_get_record($alias, $alias_context = NULL) {
   else {
     $alias_record = _drush_sitealias_get_record($alias, $alias_context);
   }
+
+  drush_log('ar in get record is: ' . var_export($alias_record, TRUE));
+
   if (!empty($alias_record)) {
     if (array_key_exists('#name', $alias_record)) {
       if ($alias_record['#name'] == 'self') {
