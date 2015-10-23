@@ -154,9 +154,7 @@ function core_drush_command() {
     'arguments' => array(
       'filter' => 'A substring for filtering the list of files. Omit this argument to choose from loaded files.',
     ),
-    'options' => array(
-      'bg' => 'Run editor in the background. Does not work with editors such as `vi` that run in the terminal.',
-    ),
+    'global-options' => array('editor', 'bg'),
     'examples' => array(
       'drush core-config' => 'Pick from a list of config/alias/settings files. Open selected in editor.',
       'drush --bg core-config' => 'Return to shell prompt as soon as the editor window opens.',
@@ -175,7 +173,7 @@ function core_drush_command() {
       'drush core-status version' => 'Show all status lines that contain version information.',
       'drush core-status --pipe' => 'A list key=value items separated by line breaks.',
       'drush core-status drush-version --pipe' => 'Emit just the drush version with no label.',
-      'drush core-status config-staging --pipe' => 'Emit just the staging Config directory with no label.',
+      'drush core-status config-sync --pipe' => 'Emit just the sync Config directory with no label.',
     ),
     'arguments' => array(
       'item' => 'Optional.  The status item line(s) to display.',
@@ -191,7 +189,7 @@ function core_drush_command() {
     'outputformat' => array(
       'default' => 'key-value',
       'pipe-format' => 'json',
-      'field-labels' => array('drupal-version' => 'Drupal version', 'uri' => 'Site URI', 'db-driver' => 'Database driver', 'db-hostname' => 'Database hostname', 'db-port' => 'Database port', 'db-username' => 'Database username', 'db-password' => 'Database password', 'db-name' => 'Database name', 'db-status' => 'Database', 'bootstrap' => 'Drupal bootstrap', 'user' => 'Drupal user', 'theme' => 'Default theme', 'admin-theme' => 'Administration theme', 'php-bin' => 'PHP executable', 'php-conf' => 'PHP configuration', 'php-os' => 'PHP OS', 'drush-script' => 'Drush script', 'drush-version' => 'Drush version', 'drush-temp' => 'Drush temp directory', 'drush-conf' => 'Drush configuration', 'drush-alias-files' => 'Drush alias files', 'install-profile' => 'Install profile', 'root' => 'Drupal root', 'site-path' => 'Site path', 'root' => 'Drupal root', 'site' => 'Site path', 'themes' => 'Themes path', 'modules' => 'Modules path', 'files' => 'File directory path', 'private' => 'Private file directory path', 'temp' => 'Temporary file directory path', 'config-staging' => 'Staging config path', 'files-path' => 'File directory path', 'temp-path' => 'Temporary file directory path', '%paths' => 'Other paths'),
+      'field-labels' => array('drupal-version' => 'Drupal version', 'uri' => 'Site URI', 'db-driver' => 'Database driver', 'db-hostname' => 'Database hostname', 'db-port' => 'Database port', 'db-username' => 'Database username', 'db-password' => 'Database password', 'db-name' => 'Database name', 'db-status' => 'Database', 'bootstrap' => 'Drupal bootstrap', 'user' => 'Drupal user', 'theme' => 'Default theme', 'admin-theme' => 'Administration theme', 'php-bin' => 'PHP executable', 'php-conf' => 'PHP configuration', 'php-os' => 'PHP OS', 'drush-script' => 'Drush script', 'drush-version' => 'Drush version', 'drush-temp' => 'Drush temp directory', 'drush-conf' => 'Drush configuration', 'drush-alias-files' => 'Drush alias files', 'install-profile' => 'Install profile', 'root' => 'Drupal root', 'site-path' => 'Site path', 'root' => 'Drupal root', 'site' => 'Site path', 'themes' => 'Themes path', 'modules' => 'Modules path', 'files' => 'File directory path', 'private' => 'Private file directory path', 'temp' => 'Temporary file directory path', 'config-sync' => 'Sync config path', 'files-path' => 'File directory path', 'temp-path' => 'Temporary file directory path', '%paths' => 'Other paths'),
       'formatted-filter' => '_drush_core_status_format_table_data',
       'private-fields' => 'db-password',
       'simplify-single' => TRUE,
@@ -535,17 +533,18 @@ function _core_site_credentials($right_margin = 0) {
 function _core_path_aliases($project = '') {
   $paths = array();
   $site_wide = drush_drupal_sitewide_directory();
+  $boot = drush_get_bootstrap_object();
   if ($drupal_root = drush_get_context('DRUSH_DRUPAL_ROOT')) {
     $paths['%root'] = $drupal_root;
     if ($site_root = drush_get_context('DRUSH_DRUPAL_SITE_ROOT')) {
       $paths['%site'] = $site_root;
-      if (is_dir($modules_path = conf_path() . '/modules')) {
+      if (is_dir($modules_path = $boot->conf_path() . '/modules')) {
         $paths['%modules'] = $modules_path;
       }
       else {
         $paths['%modules'] = ltrim($site_wide . '/modules', '/');
       }
-      if (is_dir($themes_path = conf_path() . '/themes')) {
+      if (is_dir($themes_path = $boot->conf_path() . '/themes')) {
         $paths['%themes'] = $themes_path;
       }
       else {

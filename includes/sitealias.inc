@@ -406,6 +406,7 @@ function drush_sitealias_alias_path($alias_path_context = NULL) {
   // look for alias files in /drush and /sites/all/drush.
   $drupal_root = drush_get_context('DRUSH_SELECTED_DRUPAL_ROOT');
   if (!empty($drupal_root)) {
+    $site_paths[] = drush_sitealias_alias_base_directory($drupal_root . '/../drush');
     $site_paths[] = drush_sitealias_alias_base_directory($drupal_root . '/drush');
     $site_paths[] = drush_sitealias_alias_base_directory($drupal_root . '/sites/all/drush');
     $uri = drush_get_context('DRUSH_SELECTED_URI');
@@ -422,7 +423,7 @@ function drush_sitealias_alias_path($alias_path_context = NULL) {
 }
 
 /**
- * If there is a directory 'aliases' in the specified search location,
+ * If there is a directory 'site-aliases' in the specified search location,
  * then search ONLY in that directory for aliases.  Otherwise, search
  * anywhere inside the specified directory for aliases.
  */
@@ -1050,6 +1051,9 @@ function drush_sitealias_is_bootstrapped_site($alias_record) {
  *   Returns TRUE if the alias refers to a remote site, FALSE if it does not, or NULL is unsure.
  */
 function drush_sitealias_is_remote_site($alias) {
+  if (is_array($alias) && !empty($alias['remote-host'])) {
+    return TRUE;
+  }
   if (!is_string($alias) || !strlen($alias)) {
     return NULL;
   }
@@ -1774,7 +1778,7 @@ function drush_sitealias_set_alias_context($site_alias_settings, $prefix = '') {
   // and 'remote-user' if 'remote-host' is actually the local machine.
   // This prevents drush from using the remote dispatch mechanism (the command
   // is just run directly on the local machine, bootstrapping to the specified alias)
-  elseif (array_key_exists('remote-host', $site_alias_settings) && array_key_exists('#check-local', $site_alias_settings) && drush_is_local_host($site_alias_settings['remote-host'])) {
+  elseif (array_key_exists('remote-host', $site_alias_settings) && drush_is_local_host($site_alias_settings['remote-host'])) {
     $skip_list[] = 'remote-host';
     $skip_list[] = 'remote-user';
   }
@@ -2157,7 +2161,7 @@ function drush_sitealias_get_envar_filename($filename_prefix = 'drush-drupal-sit
     return FALSE;
   }
 
-  $tmp = getenv('TMPDIR') ? getenv('TMPDIR') : '/tmp/';
+  $tmp = getenv('TMPDIR') ? getenv('TMPDIR') : '/tmp';
   $username = drush_get_username();
 
   return "{$tmp}/drush-env-{$username}/{$filename_prefix}" . posix_getppid();
