@@ -115,7 +115,9 @@ function drush_core_pre_site_install($profile = NULL) {
 
   $alias_record = drush_sitealias_get_record('@self');
   drush_log('ar is: ' . var_export('@self', TRUE));
+  drush_log('alias_record is: ' . var_export($alias_record, TRUE));
   $sites_subdir = drush_sitealias_local_site_path($alias_record);
+  drush_log('sites_subdir is: ' . var_export($sites_subdir, TRUE));
   // Override with sites-subdir if specified.
   if ($dir = drush_get_option('sites-subdir')) {
     $sites_subdir = "sites/$dir";
