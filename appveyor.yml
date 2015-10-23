@@ -61,7 +61,7 @@ cache:
 environment:
   global:
       UNISH_NO_TIMEOUTS: y
-      UNISH_DB_URL: "mysql://root:Password12!@localhost\testdb"
+      UNISH_DB_URL: "mysql://root:Password12!@localhost"
       UNISH_TMP: c:\drush_temp
 
   matrix:
