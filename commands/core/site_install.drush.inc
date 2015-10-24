@@ -127,12 +127,16 @@ function drush_core_pre_site_install($profile = NULL) {
   if (!empty($alias_record['root'])) {
     $default = realpath($alias_record['root'] . '/sites/default');
   }
+
   elseif ($root = drush_get_option('root')) {
     $default = realpath($root . '/sites/default');
   }
-  drush_log("Default is $default");
+  drush_log("Default is $default and settings file is at $settingsfile");
   $sitesfile_write = drush_drupal_major_version() >= 8 && $conf_path != $default && !file_exists($sitesfile);
 
+  if (!file_exists($settingsfile)) {
+    drush_log("$settingsfile exists");
+  }
   if (!file_exists($settingsfile)) {
     $msg[] = dt('create a @settingsfile file', array('@settingsfile' => $settingsfile));
   }
