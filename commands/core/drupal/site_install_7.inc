@@ -4,6 +4,10 @@
  * Install Drupal 7
  */
 function drush_core_site_install_version($profile, array $additional_form_options = array()) {
+
+  // DEBUGGING
+  drush_log('in drush_core_site_install_version for D7 using $profile and ' . var_export($additional_form_options));
+
   require_once DRUSH_DRUPAL_CORE . '/includes/install.core.inc';
 
   if (!isset($profile)) {
@@ -77,6 +81,14 @@ function drush_core_site_install_version($profile, array $additional_form_option
     $msg .= ' Consider using the --notify global option.';
   }
   drush_log(dt($msg), 'ok');
+
+  // DEBUGGING
+  drush_log('Installing with ' . var_export($settings, TRUE));
+
   drush_op('install_drupal', $settings);
+
+  // DEBUGGING
+  drush_log('Done installing');
+
   drush_log(dt('Installation complete.  User name: @name  User password: @pass', array('@name' => $account_name, '@pass' => $account_pass)), 'ok');
 }
