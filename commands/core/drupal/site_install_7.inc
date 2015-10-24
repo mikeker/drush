@@ -6,7 +6,7 @@
 function drush_core_site_install_version($profile, array $additional_form_options = array()) {
 
   // DEBUGGING
-  drush_log('in drush_core_site_install_version for D7 using $profile and ' . var_export($additional_form_options));
+  drush_log("in drush_core_site_install_version for D7 using $profile and additional options: " . var_export($additional_form_options, TRUE));
 
   require_once DRUSH_DRUPAL_CORE . '/includes/install.core.inc';
 
