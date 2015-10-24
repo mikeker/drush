@@ -49,9 +49,9 @@ services:
   - mysql
 
 test_script:
-  - mysql -uroot -pPassword12! -hlocalhost -e "create database testdb;"
-  #- mysql -uroot -pPassword12! -hlocalhost -e "SHOW DATABASES;"
-  - php -r "$a = new PDO('mysql:testdb;host=localhost', 'root', 'Password12!'); foreach($a->query('SHOW DATABASES;') as $row) print_r($row);"
+  - mysql -uroot -pPassword123 -hlocalhost -e "create database testdb;"
+  #- mysql -uroot -pPassword123 -hlocalhost -e "SHOW DATABASES;"
+  - php -r "$a = new PDO('mysql:testdb;host=localhost', 'root', 'Password123'); foreach($a->query('SHOW DATABASES;') as $row) print_r($row);"
   - phpunit -v --filter testDisabledModule --configuration tests %PHPUNIT_ARGS%
 
 cache:
@@ -61,7 +61,7 @@ cache:
 environment:
   global:
       UNISH_NO_TIMEOUTS: y
-      UNISH_DB_URL: "mysql://root:Password12!@localhost"
+      UNISH_DB_URL: "mysql://root:Password123@localhost"
       UNISH_TMP: c:\drush_temp
 
   matrix:
