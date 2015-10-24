@@ -4,10 +4,6 @@
  * Install Drupal 7
  */
 function drush_core_site_install_version($profile, array $additional_form_options = array()) {
-
-  // DEBUGGING
-  drush_log("in drush_core_site_install_version for D7 using $profile and additional options: " . var_export($additional_form_options, TRUE));
-
   require_once DRUSH_DRUPAL_CORE . '/includes/install.core.inc';
 
   if (!isset($profile)) {
@@ -32,6 +28,9 @@ function drush_core_site_install_version($profile, array $additional_form_option
 
   $sql = drush_sql_get_class();
   $db_spec = $sql->db_spec();
+
+  // DEBUGGING
+  drush_log('db spec is ' . var_export($db_spec, TRUE));
 
   $account_pass = drush_get_option('account-pass', drush_generate_password());
   $account_name = drush_get_option('account-name', 'admin');
