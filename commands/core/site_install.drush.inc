@@ -135,8 +135,10 @@ function drush_core_pre_site_install($profile = NULL) {
   $sitesfile_write = drush_drupal_major_version() >= 8 && $conf_path != $default && !file_exists($sitesfile);
 
   if (!file_exists($settingsfile)) {
-    drush_log("$settingsfile exists");
+    drush_log("$settingsfile exists:");
+    drush_log(file_get_contents($settingsfile));
   }
+  
   if (!file_exists($settingsfile)) {
     $msg[] = dt('create a @settingsfile file', array('@settingsfile' => $settingsfile));
   }
@@ -149,7 +151,7 @@ function drush_core_pre_site_install($profile = NULL) {
   else {
     $msg[] = dt("CREATE the '@db' database.", array('@db' => $db_spec['database']));
   }
-
+  drush_log('Messages to this point: ' . var_export($msg, TRUE));
   if (!drush_confirm(dt('You are about to ') . implode(dt(' and '), $msg) . ' Do you want to continue?')) {
     return drush_user_abort();
   }
