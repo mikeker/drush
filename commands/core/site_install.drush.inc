@@ -110,6 +110,9 @@ function drush_core_pre_site_install($profile = NULL) {
     return;
   }
 
+  // DEBUGGING
+  drush_log('db_spec in pre_site_install is ' . var_export($db_spec, TRUE));
+
   // Make sure URI is set so we get back a proper $alias_record. Needed for quick-drupal.
   _drush_bootstrap_selected_uri();
 
@@ -275,10 +278,6 @@ function drush_core_site_install($profile = NULL) {
 
   $args = func_get_args();
   $form_options = array();
-
-
-  // DEBUGGING
-  drush_log('args are ' . var_export($args, TRUE));
 
   if ($args) {
     // The first argument is the profile.
