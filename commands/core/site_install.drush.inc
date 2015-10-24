@@ -114,10 +114,7 @@ function drush_core_pre_site_install($profile = NULL) {
   _drush_bootstrap_selected_uri();
 
   $alias_record = drush_sitealias_get_record('@self');
-  drush_log('ar is: ' . var_export('@self', TRUE));
-  drush_log('alias_record is: ' . var_export($alias_record, TRUE));
   $sites_subdir = drush_sitealias_local_site_path($alias_record);
-  drush_log('sites_subdir is: ' . var_export($sites_subdir, TRUE));
   // Override with sites-subdir if specified.
   if ($dir = drush_get_option('sites-subdir')) {
     $sites_subdir = "sites/$dir";
@@ -127,7 +124,13 @@ function drush_core_pre_site_install($profile = NULL) {
   $files = !empty($GLOBALS['conf']['files_public_path']) ? $GLOBALS['conf']['files_public_path'] : "$conf_path/files";
   $settingsfile = "$conf_path/settings.php";
   $sitesfile = "sites/sites.php";
-  $default = realpath($alias_record['root'] . '/sites/default');
+  if (!empty($alias_record['root'])) {
+    $default = realpath($alias_record['root'] . '/sites/default');
+  }
+  elseif ($root = drush_get_option('root'))) {
+    $default = realpath($root . '/sites/default');
+  }
+  drush_log("Default is $default");
   $sitesfile_write = drush_drupal_major_version() >= 8 && $conf_path != $default && !file_exists($sitesfile);
 
   if (!file_exists($settingsfile)) {
