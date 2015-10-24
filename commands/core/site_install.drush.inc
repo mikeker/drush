@@ -211,7 +211,8 @@ function drush_core_pre_site_install($profile = NULL) {
   }
 
   drush_log('about to drop/create db: ' . var_export($db_spec, TRUE));
-  $sql->drop_or_create($db_spec);
+  $sql->drop_or_create($db_spec, TRUE);
+  drush_log('done with drop/create');
 
   if (drush_drupal_major_version() >= 8) {
     // Empty out any existing config directories.
