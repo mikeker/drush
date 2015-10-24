@@ -37,6 +37,7 @@ function drush_core_site_install_version($profile, array $additional_form_option
   elseif (isset($GLOBALS['UNISH_DB_URL'])) {
     $unish_db_url = $GLOBALS['UNISH_DB_URL'];
   }
+  drush_log('unish db url: ' . var_export($unish_db_url, TRUE));
   drush_log('db url parsed: ' . var_export(parse_url($unish_db_url, PHP_URL_SCHEME), TRUE));
 
   $account_pass = drush_get_option('account-pass', drush_generate_password());
