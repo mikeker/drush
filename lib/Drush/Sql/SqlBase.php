@@ -241,7 +241,6 @@ class SqlBase {
   public function createdb($quoted = FALSE) {
     $dbname = $this->db_spec['database'];
     $sql = $this->createdb_sql($dbname, $quoted);
-    drush_log('sql generated to make db: ' . var_export($sql, TRUE));
     // Adjust connection to allow for superuser creds if provided.
     $this->su();
     return $this->query($sql);
@@ -255,11 +254,9 @@ class SqlBase {
    */
   public function drop_or_create() {
     if ($this->db_exists()) {
-      drush_log('dropping');
       $this->drop($this->listTables());
     }
     else {
-      drush_log('creating');
       $this->createdb();
     }
   }
