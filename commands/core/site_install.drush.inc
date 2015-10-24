@@ -127,7 +127,7 @@ function drush_core_pre_site_install($profile = NULL) {
   if (!empty($alias_record['root'])) {
     $default = realpath($alias_record['root'] . '/sites/default');
   }
-  elseif ($root = drush_get_option('root'))) {
+  elseif ($root = drush_get_option('root')) {
     $default = realpath($root . '/sites/default');
   }
   drush_log("Default is $default");
