@@ -135,10 +135,9 @@ function drush_core_pre_site_install($profile = NULL) {
   $sitesfile_write = drush_drupal_major_version() >= 8 && $conf_path != $default && !file_exists($sitesfile);
 
   if (!file_exists($settingsfile)) {
-    drush_log("$settingsfile exists:");
-    drush_log(file_get_contents($settingsfile));
+    drush_log("$settingsfile does not exist");
   }
-  
+
   if (!file_exists($settingsfile)) {
     $msg[] = dt('create a @settingsfile file', array('@settingsfile' => $settingsfile));
   }
@@ -168,6 +167,7 @@ function drush_core_pre_site_install($profile = NULL) {
   }
 
   if (!drush_file_not_empty($settingsfile)) {
+    drush_log("copying to $settingsfile");
     if (!drush_op('copy', 'sites/default/default.settings.php', $settingsfile) && !drush_get_context('DRUSH_SIMULATE')) {
       return drush_set_error(dt('Failed to copy sites/default/default.settings.php to @settingsfile', array('@settingsfile' => $settingsfile)));
     }
@@ -201,6 +201,7 @@ function drush_core_pre_site_install($profile = NULL) {
 
   // We need to be at least at DRUSH_BOOTSTRAP_DRUPAL_SITE to select the site uri to install to
   define('MAINTENANCE_MODE', 'install');
+  drush_log('about to bootstrap');
   if (drush_drupal_major_version() == 6) {
     // The Drupal 6 installer needs to bootstrap up to the specified site.
     drush_bootstrap(DRUSH_BOOTSTRAP_DRUPAL_CONFIGURATION);
@@ -209,6 +210,7 @@ function drush_core_pre_site_install($profile = NULL) {
     drush_bootstrap(DRUSH_BOOTSTRAP_DRUPAL_SITE);
   }
 
+  drush_log('about to drop/create db: ' . var_export($db_spec, TRUE));
   $sql->drop_or_create($db_spec);
 
   if (drush_drupal_major_version() >= 8) {
