@@ -258,7 +258,6 @@ abstract class UnishTestCase extends \PHPUnit_Framework_TestCase {
   }
 
   function db_driver($db_url = UNISH_DB_URL) {
-    drush_log('parsing URL in db_driver: ' . var_export(parse_url(UNISH_DB_URL, PHP_URL_SCHEME), TRUE));
     return parse_url(UNISH_DB_URL, PHP_URL_SCHEME);
   }
 
