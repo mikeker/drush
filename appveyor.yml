@@ -51,7 +51,7 @@ services:
 test_script:
   - mysql -uroot -pPassword12! -hlocalhost -e "create database testdb;"
   #- mysql -uroot -pPassword12! -hlocalhost -e "SHOW DATABASES;"
-  - php -r "$a = new PDO('mysql:YourDatabase;host=localhost', 'root', 'Password12!'); foreach($a->query('SHOW DATABASES;') as $row) print_r($row);"
+  - php -r "$a = new PDO('mysql:testdb;host=localhost', 'root', 'Password12!'); foreach($a->query('SHOW DATABASES;') as $row) print_r($row);"
   - phpunit -v --filter testDisabledModule --configuration tests %PHPUNIT_ARGS%
 
 cache:
