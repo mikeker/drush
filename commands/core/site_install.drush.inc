@@ -111,6 +111,7 @@ function drush_core_pre_site_install($profile = NULL) {
   }
 
   // DEBUGGING
+  drush_log('stack trace: ' . var_export(debug_backtrace(TRUE), TRUE));
   drush_log('db_spec in pre_site_install is ' . var_export($db_spec, TRUE));
 
   // Make sure URI is set so we get back a proper $alias_record. Needed for quick-drupal.
