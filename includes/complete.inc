@@ -1,9 +1,5 @@
 <?php
 
-use Consolidation\AnnotatedCommand\Parser\CommandInfo;
-use Drush\Commands\core\SiteCommands;
-use Drush\Log\LogLevel;
-
 /**
  * @file
  *
@@ -108,9 +104,8 @@ function drush_early_complete() {
   // they are trying to complete.
   drush_set_option('debug', FALSE);
   if (drush_get_option('complete-debug', FALSE)) {
-    drush_set_option('debug', TRUE);
+    drush_set_context('DRUSH_DEBUG', TRUE);
   }
-  _drush_preflight_global_options();
   // Set up as if we were running the command, and attempt to parse.
   $argv = drush_complete_process_argv();
   if ($alias = drush_get_context('DRUSH_TARGET_SITE_ALIAS')) {
@@ -255,8 +250,8 @@ function drush_complete_process_argv() {
   // Check for and record any site alias.
   drush_sitealias_check_arg();
   drush_sitealias_check_site_env();
-  // We might have just changed our root--re-select the bootstrap object to use
-  $bootstrap = \Drush::bootstrapManager()->bootstrap();
+  // We might have just changed our root--run drush_select_bootstrap_class() again.
+  $bootstrap = drush_select_bootstrap_class();
 
   // Return the new argv for easy reference.
   return $argv;
@@ -470,7 +465,7 @@ function drush_complete_rebuild() {
   }
   // We treat shell aliases as commands for the purposes of completion.
   $complete['command-names'] = array_merge(array_keys($commands), array_keys(drush_get_context('shell-aliases', array())));
-  $site_aliases = SiteCommands::siteAllList();
+  $site_aliases = _drush_sitealias_all_list();
   // TODO: Figure out where this dummy @0 alias is introduced.
   unset($site_aliases['@0']);
   $complete['site-aliases'] = array_keys($site_aliases);
@@ -506,18 +501,8 @@ function drush_complete_rebuild_arguments($command) {
   // the bootstrap level, and perhaps bootstrap higher in extraordinary cases.
   drush_bootstrap_max(DRUSH_BOOTSTRAP_DRUPAL_SITE);
   $commands = drush_get_commands();
-  $command_info = $commands[$command];
-  if ($callback = $command_info['annotated-command-callback']) {
-    list($classname, $method) = $callback;
-    $commandInfo = new CommandInfo($classname, $method);
-    if ($callable = $commandInfo->getAnnotation('complete')) {
-      $result = call_user_func($callable);
-    }
-  }
-  else {
-    $hook = str_replace("-", "_", $command_info['command-hook']);
-    $result = drush_command_invoke_all($hook . '_complete');
-  }
+  $hook = str_replace("-", "_", $commands[$command]['command-hook']);
+  $result = drush_command_invoke_all($hook . '_complete');
   if (isset($result['values'])) {
     // We add a space following all completes. Eventually there may be some
     // items (e.g. comma separated arguments) where we don't add a space.

@@ -5,8 +5,6 @@
  *   Functions for executing system commands. (e.g. exec(), system(), ...).
  */
 
-use Drush\Log\LogLevel;
-
 /**
  * @defgroup commandwrappers Functions to execute commands.
  * @{
@@ -140,7 +138,9 @@ function _drush_shell_exec($args, $interactive = FALSE) {
     $command = call_user_func_array('sprintf', $args);
   }
 
-  drush_log('Executing: ' . $command, LogLevel::INFO);
+  if (drush_get_context('DRUSH_VERBOSE') || drush_get_context('DRUSH_SIMULATE')) {
+    drush_print('Executing: ' . $command, 0, STDERR);
+  }
   if (!drush_get_context('DRUSH_SIMULATE')) {
     if ($interactive) {
       $result = drush_shell_proc_open($command);
@@ -249,6 +249,18 @@ function drush_shell_proc_open($cmd) {
 }
 
 /**
+ * Used by definition of ssh and other commands that call into drush_shell_proc_build()
+ * to declare their options.
+ */
+function drush_shell_exec_proc_build_options() {
+  return array(
+   'ssh-options' => 'A string of extra options that will be passed to the ssh command (e.g. "-p 100")',
+    'tty' => 'Create a tty (e.g. to run an interactive program).',
+    'escaped' => 'Command string already escaped; do not add additional quoting.',
+  );
+}
+
+/**
  * Determine the appropriate os value for the
  * specified site record
  *
@@ -308,6 +320,40 @@ function drush_wrap_with_quotes($arg) {
  * Use raw to get an unquoted version of the escaped arg.
  * Notice that you can't add quotes later until you know the platform.
  */
+function drush_escapeshellarg($arg, $os = NULL, $raw = FALSE) {
+  // Short-circuit escaping for simple params (keep stuff readable)
+  if (preg_match('|^[a-zA-Z0-9.:/_-]*$|', $arg)) {
+    return $arg;
+  }
+  elseif (drush_is_windows($os)) {
+    return _drush_escapeshellarg_windows($arg, $raw);
+  }
+  else {
+    return _drush_escapeshellarg_linux($arg, $raw);
+  }
+}
+
+/**
+ * Windows version of escapeshellarg().
+ */
+function _drush_escapeshellarg_windows($arg, $raw = FALSE) {
+  // Double up existing backslashes
+  $arg = preg_replace('/\\\/', '\\\\\\\\', $arg);
+
+  // Double up double quotes
+  $arg = preg_replace('/"/', '""', $arg);
+
+  // Double up percents.
+  $arg = preg_replace('/%/', '%%', $arg);
+
+  // Only wrap with quotes when needed.
+  if(!$raw) {
+    // Add surrounding quotes.
+    $arg = '"' . $arg . '"';
+  }
+
+  return $arg;
+}
 
 /**
  * Stores output for the most recent shell command.
@@ -348,7 +394,7 @@ function drush_start_browser($uri = NULL, $sleep = FALSE, $port = FALSE) {
     // We can only open a browser if we have a DISPLAY environment variable on
     // POSIX or are running Windows or OS X.
     if (!drush_get_context('DRUSH_SIMULATE') && !getenv('DISPLAY') && !drush_is_windows() && !drush_is_osx()) {
-      drush_log(dt('No graphical display appears to be available, not starting browser.'), LogLevel::INFO);
+      drush_log(dt('No graphical display appears to be available, not starting browser.'), 'notice');
       return FALSE;
     }
     $host = parse_url($uri, PHP_URL_HOST);
@@ -363,7 +409,7 @@ function drush_start_browser($uri = NULL, $sleep = FALSE, $port = FALSE) {
     $hosterror = (gethostbynamel($host) === FALSE);
     $iperror = (ip2long($host) && gethostbyaddr($host) == $host);
     if (!drush_get_context('DRUSH_SIMULATE') && ($hosterror || $iperror)) {
-      drush_log(dt('!host does not appear to be a resolvable hostname or IP, not starting browser. You may need to use the --uri option in your command or site alias to indicate the correct URL of this site.', array('!host' => $host)), LogLevel::WARNING);
+      drush_log(dt('!host does not appear to be a resolvable hostname or IP, not starting browser. You may need to use the --uri option in your command or site alias to indicate the correct URL of this site.', array('!host' => $host)), 'warning');
       return FALSE;
     }
     if ($port) {

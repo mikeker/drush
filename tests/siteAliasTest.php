@@ -18,7 +18,7 @@ class saCase extends CommandUnishTestCase {
    *     places said option AFTER the command name.
    */
   function testDispatchStrictOptions() {
-    $aliasPath = self::getSandbox() . '/site-alias-directory';
+    $aliasPath = UNISH_SANDBOX . '/site-alias-directory';
     file_exists($aliasPath) ?: mkdir($aliasPath);
     $aliasFile = $aliasPath . '/bar.aliases.drushrc.php';
     $aliasContents = <<<EOD
@@ -65,7 +65,7 @@ EOD;
     $eval =  '$env_test = getenv("DRUSH_ENV_TEST");';
     $eval .= '$env_test2 = getenv("DRUSH_ENV_TEST2");';
     $eval .= 'print json_encode(get_defined_vars());';
-    $config = self::getSandbox() . '/drushrc.php';
+    $config = UNISH_SANDBOX . '/drushrc.php';
     $options = array(
       'alias-path' => $aliasPath,
       'root' => $this->webroot(),
@@ -76,11 +76,6 @@ EOD;
     $output = $this->getOutput();
     $actuals = json_decode(trim($output));
     $this->assertEquals('WORKING_CASE', $actuals->env_test);
-
-    if ($this->is_windows()) {
-      $this->markTestSkipped('@todo. Needs quoting fix, and environment variables not widely used on Windows.');
-    }
-
     $this->assertEquals('{foo:[bar:{key:"val"},bar2:{key:"long val"}]}', $actuals->env_test2);
     $eval = 'print getenv("DRUSH_ENV_TEST3");';
     $this->drush('unit-eval', array($eval), $options, '@env-test');
@@ -121,52 +116,6 @@ EOD;
   }
 
   /**
-   * Ensure that a --uri on CLI overrides on provided by site alias during a backend invoke.
-   */
-  public function testBackendHonorsAliasOverride() {
-    // Test a standard remote dispatch.
-    $this->drush('core-status', array(), array('uri' => 'http://example.com', 'simulate' => NULL), 'user@server/path/to/drupal#sitename');
-    $this->assertContains('--uri=http://example.com', $this->getOutput());
-
-    // Test a local-handling command which uses drush_redispatch_get_options().
-    $this->drush('browse', array(), array('uri' => 'http://example.com', 'simulate' => NULL), 'user@server/path/to/drupal#sitename');
-    $this->assertContains('--uri=http://example.com', $this->getOutput());
-
-    // Test a command which uses drush_invoke_process('@self') internally.
-    $sites = $this->setUpDrupal(1, TRUE);
-    $name = key($sites);
-    $sites_php = "\n\$sites['example.com'] = '$name';";
-    file_put_contents($sites[$name]['root'] . '/sites/sites.php', $sites_php, FILE_APPEND);
-    $this->drush('config-pull', array(), array('uri' => 'http://example.com', 'safe' => NULL, 'verbose' => NULL), '@' . $name);
-    $this->assertContains('--uri=http://example.com', $this->getErrorOutput());
-
-    // Test a remote alias that does not have a 'root' element
-    $aliasPath = self::getSandbox() . '/site-alias-directory';
-    @mkdir($aliasPath);
-    $aliasContents = <<<EOD
-  <?php
-  // Written by Unish. This file is safe to delete.
-  \$aliases['rootlessremote'] = array(
-    'uri' => 'remoteuri',
-    'remote-host' => 'exampleisp.com',
-    'remote-user' => 'www-admin',
-  );
-EOD;
-    file_put_contents("$aliasPath/rootlessremote.aliases.drushrc.php", $aliasContents);
-    $this->drush('core-status', array(), array('uri' => 'http://example.com', 'simulate' => NULL, 'alias-path' => $aliasPath), '@rootlessremote');
-    $output = $this->getOutput();
-    $this->assertContains(' ssh ', $output);
-    $this->assertContains('--uri=http://example.com', $output);
-
-    // Test a remote alias that does not have a 'root' element with cwd inside a Drupal root directory
-    $root = $this->webroot();
-    $this->drush('core-status', array(), array('uri' => 'http://example.com', 'simulate' => NULL, 'alias-path' => $aliasPath), '@rootlessremote', $root);
-    $output = $this->getOutput();
-    $this->assertContains(' ssh ', $output);
-    $this->assertContains('--uri=http://example.com', $output);
-  }
-
-  /**
    * Test to see if we can access aliases defined inside of
    * a provided Drupal root in various locations where they
    * may be stored.
@@ -182,8 +131,8 @@ EOD;
     'uri' => 'default',
   );
 EOD;
-    $this->mkdir($root . "/drush");
-    $this->mkdir($root . "/drush/site-aliases");
+    @mkdir($root . "/drush");
+    @mkdir($root . "/drush/site-aliases");
     file_put_contents($root . "/drush/site-aliases/atroot.aliases.drushrc.php", $aliasContents);
 
     $aliasContents = <<<EOD
@@ -194,8 +143,8 @@ EOD;
     'uri' => 'default',
   );
 EOD;
-    $this->mkdir($root . "/sites/all/drush");
-    $this->mkdir($root . "/sites/all/drush/site-aliases");
+    @mkdir($root . "/sites/all/drush");
+    @mkdir($root . "/sites/all/drush/site-aliases");
     file_put_contents($root . "/sites/all/drush/site-aliases/sitefolder.aliases.drushrc.php", $aliasContents);
 
     $aliasContents = <<<EOD
@@ -206,12 +155,12 @@ EOD;
     'uri' => 'default',
   );
 EOD;
-    $this->mkdir($root . "/../drush");
-    $this->mkdir($root . "/../drush/site-aliases");
+    @mkdir($root . "/../drush");
+    @mkdir($root . "/../drush/site-aliases");
     file_put_contents($root . "/../drush/site-aliases/aboveroot.aliases.drushrc.php", $aliasContents);
 
     // Ensure that none of these 'sa' commands return an error
-    $this->drush('sa', array('@atroot'), array('debug' => NULL, 'verbose' => NULL), '@dev');
+    $this->drush('sa', array('@atroot'), array(), '@dev');
     $this->drush('sa', array('@insitefolder'), array(), '@dev');
     $this->drush('sa', array('@aboveroot'), array(), '@dev');
   }
@@ -222,7 +171,7 @@ EOD;
    * for alias files.
    */
   public function testDeepAliasSearching() {
-    $aliasPath = self::getSandbox() . '/site-alias-directory';
+    $aliasPath = UNISH_SANDBOX . '/site-alias-directory';
     file_exists($aliasPath) ?: mkdir($aliasPath);
     $deepPath = $aliasPath . '/deep';
     file_exists($deepPath) ?: mkdir($deepPath);

@@ -4,8 +4,6 @@
  * @file
  * Filesystem utilities.
  */
-use Drush\Sql\SqlBase;
-use Webmozart\PathUtil\Path;
 
 /**
  * @defgroup filesystemfunctions Filesystem convenience functions.
@@ -237,7 +235,7 @@ function drush_copy_dir($src, $dest, $overwrite = FILE_EXISTS_ABORT) {
     return drush_set_error('DRUSH_DESTINATION_NOT_WRITABLE', dt('Destination directory !dest is not writable.', array('!dest' => dirname($dest))));
   }
   // Try to do a recursive copy.
-  if (@_drush_recursive_copy($src, $dest)) {
+  if (@drush_op('_drush_recursive_copy', $src, $dest)) {
     return TRUE;
   }
 
@@ -275,7 +273,7 @@ function _drush_recursive_copy($src, $dest) {
   touch($dest, filemtime($src));
 
   // Preserve execute permission.
-  if (!is_link($src) && (!function_exists('drush_is_windows') || !drush_is_windows())) {
+  if (!is_link($src) && !drush_is_windows()) {
     // Get execute bits of $src.
     $execperms = fileperms($src) & 0111;
     // Apply execute permissions if any.
@@ -396,13 +394,11 @@ function drush_mkdir($path, $required = TRUE) {
 /*
  * Determine if program exists on user's PATH.
  *
- * @return bool|null
+ * @return bool
  */
 function drush_program_exists($program) {
-  if (drush_has_bash()) {
-    $bucket = drush_bit_bucket();
-    return drush_op_system("command -v $program >$bucket 2>&1") === 0 ? TRUE : FALSE;
-  }
+  $bucket = drush_bit_bucket();
+  return drush_op_system("command -v $program >$bucket 2>&1") === 0 ? TRUE : FALSE;
 }
 
 /**
@@ -460,13 +456,13 @@ function drush_find_tmp() {
         // WINDIR itself is not writable, but it always contains a /Temp dir,
         // which is the system-wide temporary directory on older versions. Newer
         // versions only allow system processes to use it.
-        $directories[] = Path::join($windir, 'Temp');
+        $directories[] = $windir . '/Temp';
       }
     }
     else {
-      $directories[] = Path::canonicalize('/tmp');
+      $directories[] = '/tmp';
     }
-    $directories[] = Path::canonicalize(sys_get_temp_dir());
+    $directories[] = sys_get_temp_dir();
 
     foreach ($directories as $directory) {
       if (is_dir($directory) && is_writable($directory)) {
@@ -477,7 +473,7 @@ function drush_find_tmp() {
 
     if (empty($temporary_directory)) {
       // If no directory has been found, create one in cwd.
-      $temporary_directory = Path::join(drush_cwd(), 'tmp');
+      $temporary_directory = drush_cwd() . '/tmp';
       drush_mkdir($temporary_directory, TRUE);
       if (!is_dir($temporary_directory)) {
         return drush_set_error('DRUSH_UNABLE_TO_CREATE_TMP_DIR', dt("Unable to create a temporary directory."));
@@ -574,11 +570,12 @@ function drush_preflight_backup_dir($subdir = NULL) {
   $backup_dir = drush_get_context('DRUSH_BACKUP_DIR', drush_get_option('backup-location'));
 
   if (empty($backup_dir)) {
+
     // Try to use db name as subdir if none was provided.
     if (empty($subdir)) {
       $subdir = 'unknown';
-      if ($sql = SqlBase::create()) {
-        $db_spec = $sql->getDbSpec();
+      if ($sql = drush_sql_get_class()) {
+        $db_spec = $sql->db_spec();
         $subdir = $db_spec['database'];
       }
     }
@@ -586,12 +583,9 @@ function drush_preflight_backup_dir($subdir = NULL) {
     // Save the date to be used in the backup directory's path name.
     $date = gmdate('YmdHis', $_SERVER['REQUEST_TIME']);
 
-    $backup_dir = drush_get_option('backup-dir', Path::join(drush_server_home(), 'drush-backups'));
-    $backup_dir = Path::join($backup_dir, $subdir, $date);
+    $backup_dir = drush_get_option('backup-dir', drush_server_home() . '/' . 'drush-backups');
+    $backup_dir = drush_trim_path($backup_dir) . '/' . $subdir . '/' . $date;
     drush_set_context('DRUSH_BACKUP_DIR', $backup_dir);
-  }
-  else {
-    Path::canonicalize($backup_dir);
   }
   return $backup_dir;
 }
@@ -601,8 +595,10 @@ function drush_preflight_backup_dir($subdir = NULL) {
  */
 function drush_prepare_backup_dir($subdir = NULL) {
   $backup_dir = drush_preflight_backup_dir($subdir);
-  $backup_parent = Path::getDirectory($backup_dir);
+  $backup_parent = dirname($backup_dir);
+
   $drupal_root = drush_get_context('DRUSH_DRUPAL_ROOT');
+  $drupal_root .= '/';
 
   if ((!empty($drupal_root)) && (strpos($backup_parent, $drupal_root) === 0)) {
     return drush_set_error('DRUSH_PM_BACKUP_FAILED', dt('It\'s not allowed to store backups inside the Drupal root directory.'));
@@ -680,9 +676,6 @@ function drush_scan_directory($dir, $mask, $nomask = array('.', '..', 'CVS'), $c
   $key = (in_array($key, array('filename', 'basename', 'name')) ? $key : 'filename');
   $files = array();
 
-  // Exclude Bower and Node directories.
-  $nomask = array_merge($nomask, array('node_modules', 'bower_components'));
-
   if (is_string($dir) && is_dir($dir) && $handle = opendir($dir)) {
     while (FALSE !== ($file = readdir($handle))) {
       if (!in_array($file, $nomask) && (($include_dot_files && (!preg_match("/\.\+/",$file))) || ($file[0] != '.'))) {
@@ -740,8 +733,9 @@ function drush_file_append_data($file, $data) {
  * the other.
  */
 function drush_is_nested_directory($base_dir, $test_is_nested) {
-  $common = Path::getLongestCommonBasePath([$test_is_nested, $base_dir]);
-  return $common == Path::canonicalize($base_dir);
+  // Ensure there is always exactly one '/' at the end of $base_dir
+  $base_dir = rtrim($base_dir, '/') . '/';
+  return substr($test_is_nested, 0, strlen($base_dir)) == $base_dir;
 }
 
 /**

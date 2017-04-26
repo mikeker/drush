@@ -1,7 +1,6 @@
 <?php
 
 namespace Unish;
-use Webmozart\PathUtil\Path;
 
 /**
  * Tests for the 'drush' script itself
@@ -12,9 +11,6 @@ class drushScriptCase extends CommandUnishTestCase {
    * Test `PHP_OPTIONS=... drush`
    */
   public function testPhpOptionsTest() {
-    $this->markTestSkipped('Environment variables not yet passed along to Process by execute().');
-
-
     // @todo: could probably run this test on mingw
     if ($this->is_windows()) {
       $this->markTestSkipped('Environment variable tests not currently functional on Windows.');
@@ -28,13 +24,14 @@ class drushScriptCase extends CommandUnishTestCase {
   }
 
   public function testDrushFinder() {
-    $this->markTestSkipped('The Finder is not long for this world. Disabling this test.');
-
-    $globalDrushDotPhp = Path::join(self::getDrush(), '../drush.php');
+    // We don't really need a real Drupal site; we could
+    // create a fake site, as long as we had the right signature
+    // files to allow us to bootstrap to the DRUPAL_ROOT phase.
+    $this->setUpDrupal(1, TRUE);
 
     // Control: test `drush --root ` ... with no site-local Drush
     $drush_location = $this->getDrushLocation();
-    $this->assertEquals($globalDrushDotPhp, $drush_location);
+    $this->assertEquals(UNISH_DRUSH . '.php', $drush_location);
 
     // We will try copying a site-local Drush to
     // all of the various locations the 'drush finder'
@@ -63,9 +60,9 @@ class drushScriptCase extends CommandUnishTestCase {
       $drush_location = $this->getDrushLocation(array('root' => $this->webroot()));
       $this->assertEquals(realpath($drush_root . '/drush.php'), realpath($drush_location));
       // Test to see if --local was added
-      $result = $this->drush('ev', array('var_export(drush_get_option("local"));'), array('root' => $this->webroot()));
+      $result = $this->drush('ev', array('return drush_get_option("local");'), array('root' => $this->webroot()));
       $output = $this->getOutput();
-      $this->assertEquals("true", $output);
+      $this->assertEquals("TRUE", $output);
 
       // Get rid of the symlink and site-local Drush we created
       $this->remove_site_local_drush($drush_base);
@@ -77,7 +74,7 @@ class drushScriptCase extends CommandUnishTestCase {
     $drush_root = $this->create_site_local_drush($mysterious_location);
     // We should not find the site-local Drush without a Drush wrapper.
     $drush_location = $this->getDrushLocation(array('root' => $this->webroot()));
-    $this->assertEquals($globalDrushDotPhp, $drush_location);
+    $this->assertEquals(UNISH_DRUSH . '.php', $drush_location);
     $this->createDrushWrapper($mysterious_location);
     // Now that there is a Drush wrapper, we should be able to find the site-local Drush.
     $drush_location = $this->getDrushLocation(array('root' => $this->webroot()));
@@ -133,16 +130,18 @@ class drushScriptCase extends CommandUnishTestCase {
    * will return results other than UNISH_DRUSH in the
    * presence of a site-local Drush.
    */
-  function getDrushLocation($options = array()) {
+  function getDrushLocation($options = array(), $site_specification = NULL, $env = array()) {
     $options += array(
       'format' => 'yaml',
       'verbose' => NULL,
-      'fields' => 'drush-script',
     );
-    $result = $this->drush('status', [], $options);
+    $cd = NULL;
+    $expected_return = self::EXIT_SUCCESS;
+    $suffix = NULL;
+    $result = $this->drush('status', array('Drush script'), $options, $site_specification, $cd, $expected_return, $suffix, $env);
 
     $output = $this->getOutput();
     list($key, $value) = explode(": ", $output);
-    return trim($value, "'");
+    return trim($value);
   }
 }

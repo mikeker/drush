@@ -13,7 +13,7 @@
 #   source /path/to/your/drush.complete.sh
 
 # Ensure drush is available.
-command -v drush >/dev/null || alias drush &> /dev/null || return
+which drush > /dev/null || alias drush &> /dev/null || return
 
 __drush_ps1() {
   f="${TMPDIR:-/tmp/}/drush-env-${USER}/drush-drupal-site-$$"
