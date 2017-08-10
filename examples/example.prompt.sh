@@ -2,17 +2,32 @@
 #
 # Example PS1 prompt.
 #
-# Example - rename this to .drush_prompt, and in your ~/.bash_profile add:
-#
-#    if [ -f ~/.drush_prompt ] ; then
-#        . ~/.drush_prompt
-#    fi
+# Use `drush init` to copy this to ~/.drush/drush.prompt.sh, and source it in ~/.bashrc
 #
 # Features:
 #
 # Displays Git repository and Drush alias status in your prompt.
 
-if [ "\$(type -t __git_ps1)" ] && [ "\$(type -t __drush_ps1)" ]; then
+__drush_ps1() {
+  f="${TMPDIR:-/tmp/}/drush-env-${USER}/drush-drupal-site-$$"
+  if [ -f $f ]
+  then
+    __DRUPAL_SITE=$(cat "$f")
+  else
+    __DRUPAL_SITE="$DRUPAL_SITE"
+  fi
+
+  # Set DRUSH_PS1_SHOWCOLORHINTS to a non-empty value and define a
+  # __drush_ps1_colorize_alias() function for color hints in your Drush PS1
+  # prompt. See example.prompt.sh for an example implementation.
+  if [ -n "${__DRUPAL_SITE-}" ] && [ -n "${DRUSH_PS1_SHOWCOLORHINTS-}" ]; then
+    __drush_ps1_colorize_alias
+  fi
+
+  [[ -n "$__DRUPAL_SITE" ]] && printf "${1:- (%s)}" "$__DRUPAL_SITE"
+}
+
+if [ -n "$(type -t __git_ps1)" ] && [ "$(type -t __git_ps1)" = function ] && [ "$(type -t __drush_ps1)" ] && [ "$(type -t __drush_ps1)" = function ]; then
 
   # This line enables color hints in your Drush prompt. Modify the below
   # __drush_ps1_colorize_alias() to customize your color theme.
@@ -20,14 +35,13 @@ if [ "\$(type -t __git_ps1)" ] && [ "\$(type -t __drush_ps1)" ]; then
 
   # Git offers various prompt customization options as well as seen in
   # https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh.
-  # Uncomment any or all of the following lines to enable the corresponding
-  # features:
+  # Adjust the following lines to enable the corresponding features:
   #
-  # GIT_PS1_SHOWDIRTYSTATE=true
+  GIT_PS1_SHOWDIRTYSTATE=true
+  GIT_PS1_SHOWUPSTREAM=auto
   # GIT_PS1_SHOWSTASHSTATE=true
   # GIT_PS1_SHOWUNTRACKEDFILES=true
-  # GIT_PS1_SHOWUPSTREAM=auto
-  # GIT_PS1_SHOWCOLORHINTS=true
+  GIT_PS1_SHOWCOLORHINTS=true
 
   # The following line sets your bash prompt according to this example:
   #
